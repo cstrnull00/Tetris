@@ -250,7 +250,10 @@ void DrawChange(char f[HEIGHT][WIDTH],int command,int currentBlock,int blockRota
 
 void BlockDown(int sig){
 	// user code
-
+	timed_out = 0;
+	static int num = 0;
+	num++;
+	//printw("%d", num);
 	//강의자료 p26-27의 플로우차트를 참고한다.
 }
 
