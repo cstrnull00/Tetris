@@ -9,6 +9,7 @@
 #include <signal.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdbool.h>
 
 #define WIDTH	10
 #define HEIGHT	22
@@ -205,7 +206,7 @@ void BlockDown(int sig);
  *	return	: (int) 입력에 대한 블럭 움직임이 가능하면 1
  *		  가능하지 않으면 0을 return 한다.
  ***********************************************************/
-int CheckToMove(char f[HEIGHT][WIDTH],int currentBlock,int blockRotate, int blockY, int blockX);
+bool CheckToMove(char f[HEIGHT][WIDTH],int currentBlock,int blockRotate, int blockY, int blockX);
 
 /***********************************************************
  *	테트리스에서 command에 의해 바뀐 부분만 다시 그려준다.
@@ -295,6 +296,9 @@ void DrawBlock(int y, int x, int blockID,int blockRotate,char tile);
  *		  (int) 블록의 회전 횟수
  *	return	: none
  ***********************************************************/
+
+void eraseBlock(int y, int x, int blockID, int blockRotate);
+
 void DrawShadow(int y, int x, int blockID,int blockRotate);
 
 /***********************************************************
