@@ -236,7 +236,7 @@ void DrawField();
  *		  (int) 블럭의 X좌표
  *	return	: none
  ***********************************************************/
-void AddBlockToField(char f[HEIGHT][WIDTH],int currentBlock,int blockRotate, int blockY, int blockX);
+int AddBlockToField(char f[HEIGHT][WIDTH],int currentBlock,int blockRotate, int blockY, int blockX);
 
 /***********************************************************
  *	완전히 채워진 Line을 삭제하고 점수를 매겨준다.
@@ -297,9 +297,13 @@ void DrawBlock(int y, int x, int blockID,int blockRotate,char tile);
  *	return	: none
  ***********************************************************/
 
-void eraseBlock(int y, int x, int blockID, int blockRotate);
+void EraseBlock(int y, int x, int blockID, int blockRotate);
 
 void DrawShadow(int y, int x, int blockID,int blockRotate);
+
+int ProjectY(int y, int x, int blockID, int blockRotate);
+
+void DrawBlockWithFeatures(int y, int x, int blockID, int blockRotate);
 
 /***********************************************************
  *	테트리스 게임을 시작한다.

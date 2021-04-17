@@ -43,7 +43,7 @@ void InitTetris(){
 
 	DrawOutline();
 	DrawField();
-	DrawBlock(blockY,blockX,nextBlock[0],blockRotate,' ');
+	DrawBlockWithFeatures(blockY,blockX,nextBlock[0],blockRotate);
 	DrawNextBlock(nextBlock);
 	PrintScore(score);
 }
@@ -77,7 +77,7 @@ int GetCommand(){
 	case KEY_RIGHT:
 		break;
 	case ' ':	/* space key*/
-		/*fall block*/
+		command = ' ';
 		break;
 	case 'q':
 	case 'Q':
@@ -112,6 +112,10 @@ int ProcessCommand(int command){
 	case KEY_LEFT:
 		if((drawFlag = CheckToMove(field,nextBlock[0],blockRotate,blockY,blockX-1)))
 			blockX--;
+		break;
+	case ' ':
+		blockY = ProjectY(blockY, blockX, nextBlock[0], blockRotate);
+		drawFlag = 1;
 		break;
 	default:
 		break;
@@ -171,7 +175,7 @@ void DrawBlock(int y, int x, int blockID,int blockRotate,char tile){
 	move(HEIGHT,WIDTH+10);
 }
 
-void eraseBlock(int y, int x, int blockID, int blockRotate) {
+void EraseBlock(int y, int x, int blockID, int blockRotate) {
 	int i, j;
 	char tile = '.';
 	for(i = 0; i < 4; i++)
@@ -268,23 +272,31 @@ bool CheckToMove(char f[HEIGHT][WIDTH],int currentBlock,int blockRotate, int blo
 
 void DrawChange(char f[HEIGHT][WIDTH],int command,int currentBlock,int blockRotate, int blockY, int blockX){
 		
+ 	int projY;
 	//1. 이전 블록 정보를 찾는다. ProcessCommand의 switch문을 참조할 것
 	switch(command) {
 	//2. 이전 블록 정보를 지운다. DrawBlock함수 참조할 것.
 		case KEY_UP:
-		 	eraseBlock(blockY, blockX, currentBlock, (blockRotate + 3) % 4);
+		 	projY = ProjectY(blockY, blockX, currentBlock, (blockRotate+3)%4);
+		 	EraseBlock(projY, blockX, currentBlock, (blockRotate + 3) % 4);
+			EraseBlock(blockY, blockX, currentBlock, (blockRotate + 3) % 4);
 			break;
 		case KEY_DOWN:
-			eraseBlock(blockY - 1, blockX, currentBlock, blockRotate);
+			EraseBlock(blockY - 1, blockX, currentBlock, blockRotate);
 			break;
 		case KEY_LEFT:
-			eraseBlock(blockY, blockX + 1, currentBlock, blockRotate);
+			projY = ProjectY(blockY, blockX + 1, currentBlock, blockRotate);
+			EraseBlock(projY, blockX + 1, currentBlock, blockRotate);
+			EraseBlock(blockY, blockX + 1, currentBlock, blockRotate);
 			break;
 		case KEY_RIGHT:
-			eraseBlock(blockY, blockX - 1, currentBlock, blockRotate);
+			projY = ProjectY(blockY, blockX - 1, currentBlock, blockRotate);
+			EraseBlock(projY, blockX - 1, currentBlock, blockRotate);
+			EraseBlock(blockY, blockX - 1, currentBlock, blockRotate);
+			break;
 	}
 
-	DrawBlock(blockY, blockX, currentBlock, blockRotate, ' ');
+	DrawBlockWithFeatures(blockY, blockX, currentBlock, blockRotate);
 	//3. 새로운 블록 정보를 그린다. 
 }
 
@@ -296,7 +308,7 @@ void BlockDown(int sig){
 		DrawChange(field, KEY_DOWN, nextBlock[0], blockRotate, blockY, blockX);
 	}
 	else {
-	 	AddBlockToField(field, nextBlock[0], blockRotate, blockY, blockX);
+	 	score += AddBlockToField(field, nextBlock[0], blockRotate, blockY, blockX);
 
 		if(blockY == -1)
 		 	gameOver = 1;
@@ -312,6 +324,7 @@ void BlockDown(int sig){
 			blockY = -1;
 			blockX = WIDTH/2 - 2;
 			blockRotate = 0;
+			PrintScore(score);
 		}
 		DrawField();
 	}
@@ -319,18 +332,22 @@ void BlockDown(int sig){
 	timed_out = 0;
 }
 
-void AddBlockToField(char f[HEIGHT][WIDTH],int currentBlock,int blockRotate, int blockY, int blockX){
-	int i, j;
+int AddBlockToField(char f[HEIGHT][WIDTH],int currentBlock,int blockRotate, int blockY, int blockX){
+	int i, j, touched = 0;
+
 	for(i = 0; i < 4; i++) {
 		for(j = 0; j < 4; j++) {
 			if(block[currentBlock][blockRotate][i][j] == 1) {
 				if(0 <= blockY + i && blockY + i < HEIGHT && 0 <= blockX + j && blockX + j < WIDTH)
 				 	f[blockY + i][blockX + j] = 1;
+				if(blockY == HEIGHT - 1) touched++;
+				else if(f[blockY + i + 1][blockX + j] != 1) touched++;
 			}
 		}
 	}
-
 	//Block이 추가된 영역의 필드값을 바꾼다.
+
+	return touched * 10;
 }
 
 int DeleteLine(char f[HEIGHT][WIDTH]){
@@ -362,7 +379,21 @@ int DeleteLine(char f[HEIGHT][WIDTH]){
 ///////////////////////////////////////////////////////////////////////////
 
 void DrawShadow(int y, int x, int blockID,int blockRotate){
-	// user code
+	int projY;
+	projY = ProjectY(y, x, blockID, blockRotate);	
+	DrawBlock(projY, x, blockID, blockRotate, '/');
+}
+
+int ProjectY(int y, int x, int blockID, int blockRotate) {
+	int projY = y;
+	while(CheckToMove(field, nextBlock[0], blockRotate, projY + 1, x))
+		projY++;
+	return projY;
+}
+
+void DrawBlockWithFeatures(int y, int x, int blockID, int blockRotate) {
+	DrawShadow(y, x, blockID, blockRotate);
+	DrawBlock(y, x, blockID, blockRotate, ' ');
 }
 
 void createRankList(){
