@@ -7,8 +7,8 @@ int main(){
 
 	initscr();
 	noecho();
-	keypad(stdscr, TRUE);	
-
+	keypad(stdscr, TRUE);
+	
 	srand((unsigned int)time(NULL));
 
 	while(!exit){
@@ -32,8 +32,9 @@ void InitTetris(){
 		for(i=0;i<WIDTH;i++)
 			field[j][i]=0;
 
-	nextBlock[0]=rand()%7;
-	nextBlock[1]=rand()%7;
+	for(i = 0; i < BLOCK_NUM; i++)
+	 	nextBlock[i] = rand()%7;
+
 	blockRotate=0;
 	blockY=-1;
 	blockX=WIDTH/2-2;
@@ -55,13 +56,15 @@ void DrawOutline(){
 
 	/* next block을 보여주는 공간의 태두리를 그린다.*/
 	move(2,WIDTH+10);
-	printw("NEXT BLOCK");
-	DrawBox(3,WIDTH+10,4,8);
+	if(BLOCK_NUM > 1)
+	 	printw("NEXT BLOCK");
+	for(i = 0; i < BLOCK_NUM - 1; i++)
+		DrawBox(3 + i*6,WIDTH+10,4,8);
 
 	/* score를 보여주는 공간의 태두리를 그린다.*/
-	move(9,WIDTH+10);
+	move(3 + (BLOCK_NUM - 1)*6,WIDTH+10);
 	printw("SCORE");
-	DrawBox(10,WIDTH+10,1,8);
+	DrawBox(4 + (BLOCK_NUM - 1)*6,WIDTH+10,1,8);
 }
 
 int GetCommand(){
@@ -141,21 +144,23 @@ void DrawField(){
 
 
 void PrintScore(int score){
-	move(11,WIDTH+11);
+	move(5 + (BLOCK_NUM - 1)*6, WIDTH+11);
 	printw("%8d",score);
 }
 
 void DrawNextBlock(int *nextBlock){
-	int i, j;
-	for( i = 0; i < 4; i++ ){
-		move(4+i,WIDTH+13);
-		for( j = 0; j < 4; j++ ){
-			if( block[nextBlock[1]][0][i][j] == 1 ){
-				attron(A_REVERSE);
-				printw(" ");
-				attroff(A_REVERSE);
+	int i, j, k;
+	for( k = 1; k < BLOCK_NUM; k++) {
+		for( i = 0; i < 4; i++ ){
+			move(4 + i +(k - 1)*6,WIDTH + 13);
+			for( j = 0; j < 4; j++ ){
+				if( block[nextBlock[k]][0][i][j] == 1 ){
+					attron(A_REVERSE);
+					printw(" ");
+					attroff(A_REVERSE);
+				}	
+				else printw(" ");
 			}
-			else printw(" ");
 		}
 	}
 }
@@ -220,7 +225,7 @@ void play(){
 			timed_out=1;
 		}
 
-		command = GetCommand();
+		command = ProcessCommand(GetCommand());
 		if(ProcessCommand(command)==QUIT){
 			alarm(0);
 			DrawBox(HEIGHT/2-1,WIDTH/2-5,1,10);
@@ -314,7 +319,6 @@ void BlockDown(int sig){
 		 	gameOver = 1;
 		else {
 			score += DeleteLine(field);
-			PrintScore(score);
 
 			for(i = 0; i < BLOCK_NUM -1; i++)
 			 	nextBlock[i] = nextBlock[i + 1];
@@ -341,7 +345,7 @@ int AddBlockToField(char f[HEIGHT][WIDTH],int currentBlock,int blockRotate, int 
 				if(0 <= blockY + i && blockY + i < HEIGHT && 0 <= blockX + j && blockX + j < WIDTH)
 				 	f[blockY + i][blockX + j] = 1;
 				if(blockY == HEIGHT - 1) touched++;
-				else if(f[blockY + i + 1][blockX + j] != 1) touched++;
+				else if(f[blockY + i + 1][blockX + j] == 1) touched++;
 			}
 		}
 	}
