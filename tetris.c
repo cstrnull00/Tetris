@@ -8,18 +8,22 @@ int main(){
 	initscr();
 	noecho();
 	keypad(stdscr, TRUE);
-	
+
+	createRankList();
+
 	srand((unsigned int)time(NULL));
 
 	while(!exit){
 		clear();
 		switch(menu()){
 		case MENU_PLAY: play(); break;
+		case MENU_RANK: rank(); break;
 		case MENU_EXIT: exit=1; break;
 		default: break;
 		}
 	}
 
+	writeRankFile();
 	endwin();
 	system("clear");
 	return 0;
@@ -233,7 +237,7 @@ void play(){
 			printw("Good-bye!!");
 			refresh();
 			getch();
-
+			newRank(score);
 			return;
 		}
 	}while(!gameOver);
@@ -401,19 +405,188 @@ void DrawBlockWithFeatures(int y, int x, int blockID, int blockRotate) {
 }
 
 void createRankList(){
-	// user code
+	FILE* save;
+	int numRank, i;
+	rankNode node;
+
+	save = fopen("rank.txt", "rt");
+
+	if(save == NULL) {
+		save = fopen("rank.txt", "wt");
+		numRank = 0;
+		fprintf(save, "0\n");
+		HEAP = (rankNode*)malloc(sizeof(rankNode));
+	}
+	else {
+		fscanf(save, "%d", &numRank);
+		HEAP = (rankNode*)malloc(sizeof(rankNode)*(numRank + 1));
+
+		for(i = 0; i < numRank; i++) {
+			fscanf(save, "%s%d", node.name, &node.score);
+			push(numRank, node);
+		}
+	}
+
+	fclose(save);
+
 }
 
 void rank(){
-	// user code
+	int cmd, x, y, i, heapSize;
+	char name[NAMELEN];
+
+	heapSize = sizeof(HEAP) / sizeof(rankNode);
+	heapSize--;
+
+	do {
+		clear();
+		printw("1. list ranks from X to Y\n");
+		printw("2. list ranks by a specific name\n");
+		printw("3. delete a specific rank\n");
+		cmd = wgetch(stdscr);
+	}
+	while(!('1' <= cmd && cmd <= '3'));
+	echo();
+	switch(cmd){
+		case 1:
+			printw("X: ");
+			scanw("%d", &x);
+			printw("Y: ");
+			scanw("%d", &y);
+
+			if(x < 1 || x > heapSize) x = 1;
+			if(y < 1 || y > heapSize) y = heapSize;
+
+			printw("rank |      name      |   score   \n");
+			printw("----------------------------------\n");
+			
+			if(x > y) printw("search failure : x have to smaller than y\n");
+			else {
+				printw("rank |      name      |   score   \n");
+				printw("----------------------------------\n");
+				for(i = x; i <= y; i++)
+					printw(" %4d | %-17s| %-10d\n", i, HEAP[i].name, HEAP[i].score);
+			
+			}
+			break;
+		case 2:
+			printw("NAME : ");
+			scanf("%s", name);
+
+			printw("rank |      name      |   score   \n");
+			printw("----------------------------------\n");
+
+			x = 0;
+
+			for(i = 0; i < heapSize; i++);
+				if(strcmp(name, HEAP[i].name) == 0) {
+					printw(" %4d | %-17s| %-10d\n", i + 1, HEAP[i].name, HEAP[i].score);
+					x = 1;
+				}
+
+			if(!x) printw("search failure : no name in the list\n");
+			break;
+		case 3:
+			printw("RANK : ");
+			scanf("%d", &x);
+			if(pop(x))
+				printw("The rank has deleted\n");
+			else printw("search failure : That rank does not exists\n");
+			break;
+	}
+	noecho();
+	getch();
 }
 
+void push(int numRank, rankNode newNode){
+	int child = numRank;
+	int parent = child/2;
+	rankNode tmp;
+
+	if(HEAP == NULL)
+	 	printf("ERROR : HEAP is not identified\n");
+	else {
+	 	HEAP = (rankNode*)realloc(HEAP, sizeof(rankNode) * (++numRank + 1));
+		HEAP[numRank] = newNode;
+		while(child > 1 && HEAP[parent].score < HEAP[child].score) {
+			tmp = HEAP[parent];
+			HEAP[parent] = HEAP[child];
+			HEAP[child] = tmp;
+
+			child = parent;
+			parent = child/2;
+		}
+	}
+}
+
+int pop(int target) {
+	rankNode tmp, targetNode;
+	int i, heapSize, parent, child;
+
+	heapSize = sizeof(HEAP)/sizeof(rankNode);
+
+	for(i = 1; i <= heapSize; i++) { 
+		if(target == HEAP[i].score) {
+		 	tmp = HEAP[i];
+			HEAP[i] = HEAP[1];
+			HEAP[1] = tmp;
+			break;
+		}
+		else if(i = heapSize && HEAP[i].score != target)
+		 	return 0;
+	}
+
+	targetNode = HEAP[1];
+	tmp = HEAP[heapSize];
+
+	parent = 1;
+	child = 2;
+
+	while(child <= heapSize) {
+		if(child < heapSize && HEAP[child].score < HEAP[child + 1].score) child++;
+		if(tmp.score >= HEAP[child].score) break;
+		
+		HEAP[parent] = HEAP[child];
+		parent = child;
+		child *= 2;
+	}
+
+	HEAP[parent] = tmp;
+
+	return 1;
+}
+
+
 void writeRankFile(){
-	// user code
+ 	FILE* save;
+	int i, size = sizeof(HEAP)/sizeof(rankNode);
+
+	save = fopen("rank.txt", "wt");
+
+	fprintf(save, "%d\n", size);
+	for(i = 1; i <= size; i++)
+	 	fprintf(save, "%s %d\n", HEAP[i].name, HEAP[i].score);
+
+	free(HEAP);
+	fclose(save);
 }
 
 void newRank(int score){
-	// user code
+	int i, rank, heapSize;
+	rankNode node;
+
+	heapSize = sizeof(HEAP)/sizeof(rankNode);
+	node.score = score;
+
+	clear();
+	echo();
+	printw("Name : ");
+	scanw("%s", node.name);
+	noecho();
+
+	push(heapSize, node);
+
+	getch();
 }
 
 void DrawRecommend(int y, int x, int blockID,int blockRotate){

@@ -23,12 +23,20 @@
 
 // menu number
 #define MENU_PLAY '1'
+#define MENU_RANK '2'
 #define MENU_EXIT '4'
 
 // 사용자 이름의 길이
 #define NAMELEN 16
 
 #define CHILDREN_MAX 36
+
+typedef struct _rankNode {
+	char name[NAMELEN];
+	int score;
+} rankNode;
+
+rankNode* HEAP;
 
 typedef struct _RecNode{
 	int lv,score;
@@ -346,6 +354,10 @@ void writeRankFile();
  *	return	: none
  ***********************************************************/
 void newRank(int score);
+
+void push(int numRank, rankNode newNode);
+
+int pop(int target);
 
 /***********************************************************
  *	추천 블럭 배치를 구한다.
